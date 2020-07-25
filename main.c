@@ -88,7 +88,7 @@ void main(void) {
         __delay_ms(1000);
         RA1 = 1;
     
-        for(t=0;t<300000;t++){                                                  //tiempo de envio
+        for(t=0;t<300000;t++){                                                  //tiempo de envio cada 5 min
         __delay_ms(1000);}
     }
 }
