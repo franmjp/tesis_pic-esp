@@ -22,16 +22,8 @@
 char temp[] = "000.00 C\n\0";
 uint16_t raw_temp;
 
-const char comando1[]="AT+CIPSTART=\"TCP\",\"api.thingspeak.com\",80\r\n";      //comandos AT permite iniciar comunicacion tipo TCP al al dir y puerto que especifico, inicio el canal de cominicacion
-const char comando2[]="AT+CIPSEND=51\r\n";                                      //comando que especifica cuantos bytes le voy a mandar
-const char comando3[]="GET /update?api_key=S4T6NHJ8JYCIRPM6&field1=";           
 const char saltoLinea[]="\r\n";
-const char comando4[]="AT+CIPCLOSE\r\n";                                        //cierro la comunicacion TCP, sino se puede colapsar el modulo   
-const char comandoA[]="AT+CWMODE=3";                                            //Especifico que modo va a adoptar, 3 es access point y station
-const char comandoB[]="AT+CWJAP=\"Fibertel WiFi805 2.4GHz\",\"0043180983\"";    
 
-
-void configureESP8266();
 void send_USART_data(char* comando);
 void cargarTemperatura();
 
@@ -44,23 +36,17 @@ void main(void) {
     TXSTA = 0b00100000; // 0x20 (CSRC TX9 TXEN SYNC - BRGH TRMT TX9D)
     SPBRG = 25; // Con esto tengo 9600 baudios
     
-
+    // Prender y apagar LED
     TRISA1 = 0;
     RA1 = 0;
     __delay_ms(1000);
     RA1 = 1;
     __delay_ms(1000);
     RA1 = 0;
-    
-    // Inicio la comunicacion con el web server por el puerto 80
-    
-    char temperaturaNueva[6] = "     ";
-    configureESP8266();
-    int t = 0;
-    
       
+    char temperaturaNueva[6] = "     ";
+    
     while(1){
-        //send_USART_data(&emilio);
         cargarTemperatura();
         temperaturaNueva[0] = temp[0];
         temperaturaNueva[1] = temp[1];
@@ -68,28 +54,22 @@ void main(void) {
         temperaturaNueva[3] = temp[3];
         temperaturaNueva[4] = temp[4];
         temperaturaNueva[5] = '\0';
-        //send_USART_data(&temp);
-        // Abro conexion
-        send_USART_data(&comando1);
-        __delay_ms(500);
-        // Establezco cantidad a enviar
-        send_USART_data(&comando2);
-        __delay_ms(500);
-        // Envio datos
-        send_USART_data(&comando3);
-        send_USART_data(&temperaturaNueva);
-        send_USART_data(&saltoLinea);
-        __delay_ms(500);
-        //Mato conexion
-        send_USART_data(&comando4);
         
+        // Mando comando "temperatura"
+        send_USART_data("temperatura");
+        __delay_ms(750);
+        send_USART_data(&temperaturaNueva);      
+        
+        // Prender y apagar LED al terminar de enviar datos
         __delay_ms(1000);
         RA1 = 0;
         __delay_ms(1000);
         RA1 = 1;
     
-        for(t=0;t<300000;t++){                                                  //tiempo de envio cada 5 min
-        __delay_ms(1000);}
+        
+        __delay_ms(10000);
+        //for(t=0;t<300000;t++){                                                  //tiempo de envio cada 5 min
+        //__delay_ms(1000);}
     }
 }
 
@@ -128,12 +108,3 @@ void cargarTemperatura() {
         temp[8] = '\n';
     }
 }
-
-void configureESP8266(){
-    
-    send_USART_data(&comandoA);
-    __delay_ms(4000);
-    send_USART_data(&comandoB);
-    __delay_ms(4000);
-}
-
