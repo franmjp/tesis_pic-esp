@@ -22,62 +22,72 @@
 char temp[] = "000.00 C\n\0";
 uint16_t raw_temp;
 
-const char saltoLinea[]="\r\n";
+const char saltoLinea[] = "\r\n";
 
 void send_USART_data(char* comando);
 void cargarTemperatura();
+void enviarTemperatura();
 
 void main(void) {
-    
+
     // Configuracion para el puerto Serial
     TRISB2 = 0; // TX
     TRISB1 = 1; // RX
     RCSTA = 0b10010000; // 0x90 (SPEN RX9 SREN CREN ADEN FERR OERR RX9D)
     TXSTA = 0b00100000; // 0x20 (CSRC TX9 TXEN SYNC - BRGH TRMT TX9D)
     SPBRG = 25; // Con esto tengo 9600 baudios
-    
+
+    // Sensor de puerta abierta
+    TRISB5 = 1; // Pull Down
+
     // Prender y apagar LED
     TRISA1 = 0;
     RA1 = 0;
     __delay_ms(1000);
     RA1 = 1;
     __delay_ms(1000);
-    RA1 = 0;
-      
-    char temperaturaNueva[6] = "     ";
+    RA1 = 0;   
+
     
-    while(1){
-        cargarTemperatura();
-        temperaturaNueva[0] = temp[0];
-        temperaturaNueva[1] = temp[1];
-        temperaturaNueva[2] = temp[2];
-        temperaturaNueva[3] = temp[3];
-        temperaturaNueva[4] = temp[4];
-        temperaturaNueva[5] = '\0';
-        
-        // Mando comando "temperatura"
-        send_USART_data("temperatura");
-        __delay_ms(750);
-        send_USART_data(&temperaturaNueva);      
-        
-        // Prender y apagar LED al terminar de enviar datos
+    int banderaEnviarTemperatura = 0;
+    while (1) {
+        banderaEnviarTemperatura ++;
+        if(banderaEnviarTemperatura == 5){
+            enviarTemperatura();
+            banderaEnviarTemperatura = 0;
+        }
         __delay_ms(1000);
-        RA1 = 0;
-        __delay_ms(1000);
-        RA1 = 1;
-    
-        
-        __delay_ms(10000);
-        //for(t=0;t<300000;t++){                                                  //tiempo de envio cada 5 min
-        //__delay_ms(1000);}
+        if(RB5 == 1){
+            send_USART_data("puerta");
+            __delay_ms(2000);
+            send_USART_data("abierta");
+            __delay_ms(2000);
+        }
     }
 }
 
-void send_USART_data(char* comando){
-    int i=0;
-    while(comando[i] != '\0'){
-        while(!TXIF)
-                continue;
+void enviarTemperatura() {
+    char temperaturaNueva[6] = "     ";
+    cargarTemperatura();
+    temperaturaNueva[0] = temp[0];
+    temperaturaNueva[1] = temp[1];
+    temperaturaNueva[2] = temp[2];
+    temperaturaNueva[3] = temp[3];
+    temperaturaNueva[4] = temp[4];
+    temperaturaNueva[5] = '\0';
+
+    // Mando comando "temperatura"
+    send_USART_data("temperatura");
+    __delay_ms(2000);
+    send_USART_data(&temperaturaNueva);
+
+}
+
+void send_USART_data(char* comando) {
+    int i = 0;
+    while (comando[i] != '\0') {
+        while (!TXIF)
+            continue;
         TXREG = comando[i];
         i++;
     }
