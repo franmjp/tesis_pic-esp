@@ -127,30 +127,31 @@ void cargarTemperatura() {
 void __interrupt() my_isr_routine(void) {
 
     if (INTF) {
-
-        __delay_ms(1000);
-        RA1 = 1;
-        __delay_ms(1000);
-        RA1 = 0;
-        __delay_ms(1000);
-        RA1 = 1;
-        __delay_ms(1000);
-        RA1 = 0;
-
-        // TODO: averiguar para realizarlo con timers
-        __delay_ms(10000);
+        __delay_ms(250);
         if (RB0 == 1) {
+            __delay_ms(1000);
+            RA1 = 1;
+            __delay_ms(1000);
+            RA1 = 0;
+            __delay_ms(1000);
+            RA1 = 1;
+            __delay_ms(1000);
+            RA1 = 0;
+
+            // TODO: averiguar para realizarlo con timers
             send_USART_data("puerta");
             __delay_ms(2000);
             send_USART_data("abierta");
         }
+
+        INTF = 0;
     }
 
     if (RBIF) {
         if (RB5 == 0) {
             send_USART_data("SIN TENSION");
             __delay_ms(2000);
-        }else{
+        } else {
             send_USART_data("VOLVIO TENSION");
             __delay_ms(2000);
         }
