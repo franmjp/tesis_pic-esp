@@ -30,14 +30,17 @@ void enviarTemperatura();
 
 void main(void) {
 
-    
+
     // Habilito las interrupciones 
     GIE = 1;
     PEIE = 1;
-    INTE=1;
-    INTEDG=0;
+    INTE = 1;
+    INTEDG = 0;
+    RBIE = 1; // Habilito interrupts en parte alta puerto B
+
+    // T0IE = 1; // Habilito el timer 0
     // Habilito entrada de interrupcion
-    
+
     TRISB0 = 1;
     // Configuracion para el puerto Serial
     TRISB2 = 0; // TX
@@ -55,25 +58,16 @@ void main(void) {
     __delay_ms(1000);
     RA1 = 1;
     __delay_ms(1000);
-    RA1 = 0;   
+    RA1 = 0;
 
-    
+
     int banderaEnviarTemperatura = 0;
     while (1) {
-        banderaEnviarTemperatura ++;
-        if(banderaEnviarTemperatura == 5){
+        banderaEnviarTemperatura++;
+        if (banderaEnviarTemperatura == 5) {
             enviarTemperatura();
             banderaEnviarTemperatura = 0;
         }
-        /*
-        __delay_ms(1000);
-        if(RB5 == 1){
-            send_USART_data("puerta");
-            __delay_ms(2000);
-            send_USART_data("abierta");
-            __delay_ms(2000);
-        }
-        */
     }
 }
 
@@ -130,9 +124,10 @@ void cargarTemperatura() {
     }
 }
 
-void __interrupt () my_isr_routine (void) {
-    
-    if(INTF){
+void __interrupt() my_isr_routine(void) {
+
+    if (INTF) {
+
         __delay_ms(1000);
         RA1 = 1;
         __delay_ms(1000);
@@ -141,6 +136,24 @@ void __interrupt () my_isr_routine (void) {
         RA1 = 1;
         __delay_ms(1000);
         RA1 = 0;
-        INTF = 0;
+
+        // TODO: averiguar para realizarlo con timers
+        __delay_ms(10000);
+        if (RB0 == 1) {
+            send_USART_data("puerta");
+            __delay_ms(2000);
+            send_USART_data("abierta");
+        }
+    }
+
+    if (RBIF) {
+        if (RB5 == 0) {
+            send_USART_data("SIN TENSION");
+            __delay_ms(2000);
+        }else{
+            send_USART_data("VOLVIO TENSION");
+            __delay_ms(2000);
+        }
+        RBIF = 0;
     }
 }
