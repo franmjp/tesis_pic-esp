@@ -141,5 +141,6 @@ void __interrupt () my_isr_routine (void) {
         RA1 = 1;
         __delay_ms(1000);
         RA1 = 0;
+        INTF = 0;
     }
 }
