@@ -24,7 +24,7 @@ CLEAN_SUBPROJECTS=${CLEAN_SUBPROJECTS_${SUBPROJECTS}}
 
 
 # Project Name
-PROJECTNAME=ESP8266.X
+PROJECTNAME=tesis_pic-esp
 
 # Active Configuration
 DEFAULTCONF=default

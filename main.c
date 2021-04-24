@@ -30,6 +30,15 @@ void enviarTemperatura();
 
 void main(void) {
 
+    
+    // Habilito las interrupciones 
+    GIE = 1;
+    PEIE = 1;
+    INTE=1;
+    INTEDG=0;
+    // Habilito entrada de interrupcion
+    
+    TRISB0 = 1;
     // Configuracion para el puerto Serial
     TRISB2 = 0; // TX
     TRISB1 = 1; // RX
@@ -56,6 +65,7 @@ void main(void) {
             enviarTemperatura();
             banderaEnviarTemperatura = 0;
         }
+        /*
         __delay_ms(1000);
         if(RB5 == 1){
             send_USART_data("puerta");
@@ -63,6 +73,7 @@ void main(void) {
             send_USART_data("abierta");
             __delay_ms(2000);
         }
+        */
     }
 }
 
@@ -116,5 +127,19 @@ void cargarTemperatura() {
         temp[5] = (((raw_temp & 0x0F) * 625) / 100) % 10 + '0'; // put hundreds digit
         // Add break line to end
         temp[8] = '\n';
+    }
+}
+
+void __interrupt () my_isr_routine (void) {
+    
+    if(INTF){
+        __delay_ms(1000);
+        RA1 = 1;
+        __delay_ms(1000);
+        RA1 = 0;
+        __delay_ms(1000);
+        RA1 = 1;
+        __delay_ms(1000);
+        RA1 = 0;
     }
 }
