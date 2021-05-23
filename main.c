@@ -1,7 +1,7 @@
 // CONFIG
 #pragma config FOSC = HS
 #pragma config WDTE = OFF
-#pragma config PWRTE = OFF       // Power-up Timer Enable bit (PWRT enabled)
+#pragma config PWRTE = OFF       //Power-up Timer Enable bit (PWRT enabled)
 #pragma config MCLRE = OFF      // RA5/MCLR/VPP Pin Function Select bit (RA5/MCLR/VPP pin function is digital input, MCLR internally tied to VDD)
 #pragma config BOREN = OFF      // Brown-out Detect Enable bit (BOD disabled)
 #pragma config LVP = OFF        // Low-Voltage Programming Enable bit (RB4/PGM pin has digital I/O function, HV on MCLR must be used for programming)
@@ -13,7 +13,7 @@
 
 #include <xc.h>         //libreria propia de pics de 8 bits, estan las ctes de cada pata del pic
 #include <string.h>     //maneja cadena de textos en c
-#include <stdint.h>     // libreria para usar tipos de datosque no soporta datos de forma directa 
+#include <stdint.h>     //libreria para usar tipos de datos que no soporta datos de forma directa 
 #include "dallas.h"     //header del sensor
 
 
@@ -47,9 +47,9 @@ void main(void) {
     TRISB1 = 1; // RX
     RCSTA = 0b10010000; // 0x90 (SPEN RX9 SREN CREN ADEN FERR OERR RX9D)
     TXSTA = 0b00100000; // 0x20 (CSRC TX9 TXEN SYNC - BRGH TRMT TX9D)
-    SPBRG = 25; // Con esto tengo 9600 baudios
+    SPBRG = 25; // Con esta configuración obtengo 9600 baudios
 
-    // Sensor de puerta abierta
+    // Sensor de corriente
     TRISB5 = 1; // Pull Down
 
     // Prender y apagar LED
@@ -59,14 +59,47 @@ void main(void) {
     RA1 = 1;
     __delay_ms(1000);
     RA1 = 0;
-
+    
+    TRISA3 = 1;  //Se configura RA3 para consultar estado de puerta 
+    TRISA1 = 1;
+    
+    int puertaAbierta = 0;
+    int sensorCorriente = 0;
 
     int banderaEnviarTemperatura = 0;
     while (1) {
         banderaEnviarTemperatura++;
-        if (banderaEnviarTemperatura == 5) {
+        if (banderaEnviarTemperatura == 5) {    //Sacar de aqui para usar un timer
             enviarTemperatura();
             banderaEnviarTemperatura = 0;
+        }
+        if (RA3==1 && puertaAbierta==0){    //consulta estado de puerta
+            puertaAbierta = 1;
+            send_USART_data("puerta");
+            __delay_ms(250);
+            send_USART_data("abierta");     //agragar timer 1 para buzzer 10seg
+            enviarTemperatura(); 
+            }
+        if (RA3==0 && puertaAbierta==1){
+            puertaAbierta = 0;
+            send_USART_data("puerta");
+            __delay_ms(250);
+            send_USART_data("cerrada");     //parar el timer del buzzer
+            enviarTemperatura(); 
+        }
+        if (RA1==1 && sensorCorriente==0){    //consulta estado de Sensor de Corriente
+            sensorCorriente = 1;
+            send_USART_data("corriente");
+            __delay_ms(250);
+            send_USART_data("si");
+                  
+            }
+        if (RA1==0 && sensorCorriente==1){
+            sensorCorriente = 0;
+            send_USART_data("corriente");
+            __delay_ms(250);
+            send_USART_data("no");
+            
         }
     }
 }
@@ -83,7 +116,7 @@ void enviarTemperatura() {
 
     // Mando comando "temperatura"
     send_USART_data("temperatura");
-    __delay_ms(2000);
+    __delay_ms(250);                       //Timer 0 para envinar esto 5 min
     send_USART_data(&temperaturaNueva);
 
 }
@@ -121,40 +154,5 @@ void cargarTemperatura() {
         temp[5] = (((raw_temp & 0x0F) * 625) / 100) % 10 + '0'; // put hundreds digit
         // Add break line to end
         temp[8] = '\n';
-    }
-}
-
-void __interrupt() my_isr_routine(void) {
-
-    if (INTF) {
-        __delay_ms(250);
-        if (RB0 == 1) {
-            __delay_ms(1000);
-            RA1 = 1;
-            __delay_ms(1000);
-            RA1 = 0;
-            __delay_ms(1000);
-            RA1 = 1;
-            __delay_ms(1000);
-            RA1 = 0;
-
-            // TODO: averiguar para realizarlo con timers
-            send_USART_data("puerta");
-            __delay_ms(2000);
-            send_USART_data("abierta");
-        }
-
-        INTF = 0;
-    }
-
-    if (RBIF) {
-        if (RB5 == 0) {
-            send_USART_data("SIN TENSION");
-            __delay_ms(2000);
-        } else {
-            send_USART_data("VOLVIO TENSION");
-            __delay_ms(2000);
-        }
-        RBIF = 0;
     }
 }
