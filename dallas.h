@@ -1,6 +1,11 @@
 #ifndef XC_HEADER_18B20_H
 #define	XC_HEADER_18B20_H
 
+#include <stdint.h>
+#include <xc.h>
+#ifndef _XTAL_FREQ
+#define	_XTAL_FREQ 16000000   // Este pic esta 32 MHz
+#endif
 // DS18B20 data pin is connected to physical PIN on PIC
 #define DS18B20_PIN      PORTBbits.RB3
 #define DS18B20_PIN_Dir  TRISBbits.TRISB3
@@ -94,6 +99,4 @@ __bit ds18b20_read(uint16_t *raw_temp_value)
   return 1;   // OK --> return 1
 }
 
-#endif	
-
-
+#endif
